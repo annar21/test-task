@@ -1,10 +1,8 @@
--- Categories table
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL
 );
 
--- Products table
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -12,7 +10,6 @@ CREATE TABLE products (
     category_id INTEGER NOT NULL REFERENCES categories(id)
 );
 
--- Orders table
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
     product_id INTEGER NOT NULL REFERENCES products(id),
