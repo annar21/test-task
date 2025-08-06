@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Order Tester</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 2em; }
+            .stats-table { border-collapse: collapse; margin-top: 1em; }
+            .stats-table th, .stats-table td { border: 1px solid #ccc; padding: 0.5em 1em; }
+            .stats-table th { background: #f0f0f0; }
+            .error { color: red; }
+        </style>
+    </head>
+    <body>
+        <h1>Order Tester</h1>
+        <label for="n">Number of parallel orders (N):</label>
+        <input type="number" id="n" value="10" min="1" max="1000">
+        <button id="run">Run Beta</button>
+        <div id="beta-result"></div>
+        <h2>Live Stats (Gamma)</h2>
+        <div id="stats"></div>
+        <script>
+            function fetchStats() {
+                fetch('gamma.php')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.error) {
+                            document.getElementById('stats').innerHTML = '<span class="error">' + data.error + '</span>';
+                            return;
+                        }
+                        let html = '<table class="stats-table"><tr><th>Category</th><th>Orders</th></tr>';
+                        for (const [cat, count] of Object.entries(data.category_counts)) {
+                            html += `<tr><td>${cat}</td><td>${count}</td></tr>`;
+                        }
+                        html += '</table>';
+                        html += `<p>Total orders: <b>${data.orders_count}</b></p>`;
+                        if (data.time_diff_seconds !== null) {
+                            html += `<p>Time between first and last order: <b>${data.time_diff_seconds}</b> seconds</p>`;
+                            html += `<p>First order: ${data.first_order_time}<br>Last order: ${data.last_order_time}</p>`;
+                        }
+                        document.getElementById('stats').innerHTML = html;
+                    })
+                    .catch(e => {
+                        document.getElementById('stats').innerHTML = '<span class="error">Failed to load stats</span>';
+                    });
+            }
+            setInterval(fetchStats, 1000);
+            fetchStats();
+
+            document.getElementById('run').onclick = function() {
+                const n = document.getElementById('n').value;
+                document.getElementById('beta-result').textContent = 'Running...';
+                fetch('beta.php?n=' + encodeURIComponent(n))
+                    .then(r => r.json())
+                    .then(data => {
+                        document.getElementById('beta-result').textContent = 'Requested: ' + data.requested + ', Success: ' + data.results.filter(x => x && x.startsWith('Order created')).length;
+                    })
+                    .catch(e => {
+                        document.getElementById('beta-result').textContent = 'Error running Beta.';
+                    });
+            };
+        </script>
+    </body>
+</html> 
