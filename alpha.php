@@ -1,4 +1,14 @@
+
 <?php
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+require_once __DIR__ . '/vendor/autoload.php';
+use Predis\Client as PredisClient;
 
 $db = [
     'host' => 'localhost',
@@ -14,7 +24,8 @@ $lock_file = __DIR__ . '/alpha.lock';
 $lock_ttl = 5;
 
 function acquire_redis_lock($redis, $key, $ttl) {
-    return $redis->set($key, 1, ['nx', 'ex' => $ttl]);
+    // Predis expects options as associative array
+    return $redis->set($key, 1, ['nx' => true, 'ex' => $ttl]);
 }
 function release_redis_lock($redis, $key) {
     $redis->del([$key]);
@@ -38,11 +49,12 @@ function release_file_lock($fp, $file) {
 $locked = false;
 $redis = null;
 try {
-    if (class_exists('Redis')) {
-        $redis = new Redis();
-        $redis->connect($redis_host, $redis_port, 1);
-        $locked = acquire_redis_lock($redis, $lock_key, $lock_ttl);
-    }
+    $redis = new PredisClient([
+        'scheme' => 'tcp',
+        'host'   => $redis_host,
+        'port'   => $redis_port,
+    ]);
+    $locked = acquire_redis_lock($redis, $lock_key, $lock_ttl);
 } catch (Exception $e) {
     $redis = null;
 }
