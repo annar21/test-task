@@ -75,7 +75,7 @@ sleep(1);
 try {
     $pdo = new PDO("pgsql:host={$db['host']};port={$db['port']};dbname={$db['dbname']}", $db['user'], $db['pass']);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $product = $pdo->query('SELECT id FROM products ORDER BY random() LIMIT 1')->fetch(PDO::FETCH_ASSOC);
+    $product = $pdo->query('SELECT id FROM products ORDER BY id LIMIT 1')->fetch(PDO::FETCH_ASSOC);
     if ($product) {
         $stmt = $pdo->prepare('INSERT INTO orders (product_id) VALUES (:pid)');
         $stmt->execute([':pid' => $product['id']]);
